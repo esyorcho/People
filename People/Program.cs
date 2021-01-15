@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using People.Client.DTOs;
+using People.Client.Helpers;
 
 namespace People.Client
 {
@@ -24,6 +25,17 @@ namespace People.Client
         static void ShowPersonsFirstNames(List<PersonDto> persons)
         {
             Console.WriteLine($"First Names: {string.Join(", ", persons.Select(p => p.First))}");
+        }
+
+        static void ShowGenderCountByAge(Dictionary<int, List<Tuple<Enums.Gender, int>>> genderCountByAge)
+        {
+            foreach (var keyValuePair in genderCountByAge)
+            {
+                Console.WriteLine(
+                    $"Age: {keyValuePair.Key} " +
+                    string.Join(" ", keyValuePair.Value.Select(g => $"{g.Item1.ToString()}: {g.Item2.ToString()}"))
+                );
+            }
         }
 
         static async Task<List<PersonDto>> GetPersonsAsync(string path)
@@ -59,8 +71,24 @@ namespace People.Client
                 ShowPersonFullName(personId42);
 
                 // Show all first names of people who are 23:
-                var persons23 = allPersons.Where(p => p.Age == 999).ToList();
+                var persons23 = allPersons.Where(p => p.Age == 23).ToList(); 
                 ShowPersonsFirstNames(persons23);
+
+                // Number of genders per age, from youngest to oldest
+                var gendersPerAgeSorted = allPersons
+                    .GroupBy(p => p.Age)
+                    .OrderBy(a => a.Key)
+                    .Select(a => new
+                    {
+                        Age = a.Key,
+                        Genders = a.GroupBy(g => g.Gender)
+                            .Select(genderGroup => new Tuple<Enums.Gender, int>
+                            (
+                                genderGroup.Key,
+                                genderGroup.Count()
+                            ))
+                    }).ToDictionary(g => g.Age, g => g.Genders.ToList());
+                ShowGenderCountByAge(gendersPerAgeSorted);
             }
             catch (Exception e)
             {

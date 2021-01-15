@@ -1,4 +1,6 @@
-﻿namespace People.Client.Helpers
+﻿using System.Net.Http.Headers;
+
+namespace People.Client.Helpers
 {
     public class Enums
     {
