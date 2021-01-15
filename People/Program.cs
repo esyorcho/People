@@ -1,12 +1,72 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using People.Client.DTOs;
 
-namespace People
+namespace People.Client
 {
     class Program
     {
-        static void Main(string[] args)
+        static HttpClient client = new HttpClient();
+        private const string baseAddress = "https://f43qgubfhf.execute-api.ap-southeast-2.amazonaws.com/sampletest/";
+
+        static void ShowPersonFullName(PersonDto personDto)
         {
-            Console.WriteLine("Hello World!");
+            string message = personDto != null ?
+                $"Full Name: {personDto.First} {personDto.Last}" :
+            "This person doesn't exist";
+            Console.WriteLine(message);
+        }
+
+        static void ShowPersonsFirstNames(List<PersonDto> persons)
+        {
+            Console.WriteLine($"First Names: {string.Join(", ", persons.Select(p => p.First))}");
+        }
+
+        static async Task<List<PersonDto>> GetPersonsAsync(string path)
+        {
+            List<PersonDto> persons = null;
+            HttpResponseMessage response = await client.GetAsync(path);
+            if (response.IsSuccessStatusCode)
+            {
+                persons = await response.Content.ReadAsAsync<List<PersonDto>>();
+            }
+
+            return persons;
+        }
+
+        static void Main()
+        {
+            RunAsync().GetAwaiter().GetResult();
+        }
+
+        static async Task RunAsync()
+        {
+            client.BaseAddress = new Uri(baseAddress);
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            try
+            {
+                // Get all people
+                var allPersons = await GetPersonsAsync(baseAddress);
+
+                // Show full name of personDto with id 42
+                var personId42 = allPersons.SingleOrDefault(p => p.Id == 42);
+                ShowPersonFullName(personId42);
+
+                // Show all first names of people who are 23:
+                var persons23 = allPersons.Where(p => p.Age == 999).ToList();
+                ShowPersonsFirstNames(persons23);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
             Console.ReadLine();
         }
     }
