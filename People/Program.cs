@@ -33,7 +33,7 @@ namespace People.Client
             {
                 Console.WriteLine(
                     $"Age: {keyValuePair.Key} " +
-                    string.Join(" ", keyValuePair.Value.Select(g => $"{g.Item1.ToString()}: {g.Item2.ToString()}"))
+                    string.Join(" ", keyValuePair.Value.Select(g => $"{g.Item1.GetDescription()}: {g.Item2.ToString()}"))
                 );
             }
         }
@@ -88,6 +88,7 @@ namespace People.Client
                                 genderGroup.Count()
                             ))
                     }).ToDictionary(g => g.Age, g => g.Genders.ToList());
+
                 ShowGenderCountByAge(gendersPerAgeSorted);
             }
             catch (Exception e)
