@@ -14,37 +14,13 @@ namespace People.Client
         static HttpClient client = new HttpClient();
         private const string baseAddress = "https://f43qgubfhf.execute-api.ap-southeast-2.amazonaws.com/sampletest/";
 
-        static void ShowPersonFullName(PersonDto personDto)
+        static async Task<IEnumerable<PersonDto>> GetPersonsAsync(string path)
         {
-            string message = personDto != null ?
-                $"Full Name: {personDto.First} {personDto.Last}" :
-            "This person doesn't exist";
-            Console.WriteLine(message);
-        }
-
-        static void ShowPersonsFirstNames(List<PersonDto> persons)
-        {
-            Console.WriteLine($"First Names: {string.Join(", ", persons.Select(p => p.First))}");
-        }
-
-        static void ShowGenderCountByAge(Dictionary<int, List<Tuple<Enums.Gender, int>>> genderCountByAge)
-        {
-            foreach (var keyValuePair in genderCountByAge)
-            {
-                Console.WriteLine(
-                    $"Age: {keyValuePair.Key} " +
-                    string.Join(" ", keyValuePair.Value.Select(g => $"{g.Item1.GetDescription()}: {g.Item2.ToString()}"))
-                );
-            }
-        }
-
-        static async Task<List<PersonDto>> GetPersonsAsync(string path)
-        {
-            List<PersonDto> persons = null;
+            IEnumerable<PersonDto> persons = null;
             HttpResponseMessage response = await client.GetAsync(path);
             if (response.IsSuccessStatusCode)
             {
-                persons = await response.Content.ReadAsAsync<List<PersonDto>>();
+                persons = await response.Content.ReadAsAsync<IEnumerable<PersonDto>>();
             }
 
             return persons;
@@ -66,30 +42,7 @@ namespace People.Client
                 // Get all people
                 var allPersons = await GetPersonsAsync(baseAddress);
 
-                // Show full name of personDto with id 42
-                var personId42 = allPersons.SingleOrDefault(p => p.Id == 42);
-                ShowPersonFullName(personId42);
-
-                // Show all first names of people who are 23:
-                var persons23 = allPersons.Where(p => p.Age == 23).ToList(); 
-                ShowPersonsFirstNames(persons23);
-
-                // Number of genders per age, from youngest to oldest
-                var gendersPerAgeSorted = allPersons
-                    .GroupBy(p => p.Age)
-                    .OrderBy(a => a.Key)
-                    .Select(a => new
-                    {
-                        Age = a.Key,
-                        Genders = a.GroupBy(g => g.Gender)
-                            .Select(genderGroup => new Tuple<Enums.Gender, int>
-                            (
-                                genderGroup.Key,
-                                genderGroup.Count()
-                            ))
-                    }).ToDictionary(g => g.Age, g => g.Genders.ToList());
-
-                ShowGenderCountByAge(gendersPerAgeSorted);
+                RunQueries(allPersons);
             }
             catch (Exception e)
             {
@@ -97,6 +50,70 @@ namespace People.Client
             }
 
             Console.ReadLine();
+        }
+
+        static void RunQueries(IEnumerable<PersonDto> allPersons)
+        {
+            DisplayFullNameOfPeopleWithId(allPersons);
+
+            DisplayFirstNamesOfPeopleWithAge(allPersons);
+
+            DisplayNumberGendersPerAgeOrdered(allPersons);
+        }
+
+        // Show full name of person with id 42
+        static void DisplayFullNameOfPeopleWithId(IEnumerable<PersonDto> allPersons, int id = 42)
+        {
+            var persons = allPersons.Where(p => p.Id == id);
+            if (persons.Any())
+            {
+                Print.DisplayPersonFullName(persons);
+            }
+            else
+            {
+                Print.DisplayNotFound($"id {id}");
+            }
+        }
+
+        // Show all first names of people who are 23:
+        static void DisplayFirstNamesOfPeopleWithAge(IEnumerable<PersonDto> allPersons, int age = 23)
+        {
+            var persons = allPersons.Where(p => p.Age == age);
+            if (persons.Any())
+            {
+                Print.DisplayPersonsFirstNames(persons);
+            }
+            else
+            {
+                Print.DisplayNotFound($"Age {age}");
+            }
+        }
+
+        static void DisplayNumberGendersPerAgeOrdered(IEnumerable<PersonDto> allPersons)
+        {
+            // Number of genders per age, from youngest to oldest
+            var gendersPerAgeSorted = allPersons
+                .GroupBy(p => p.Age)
+                .OrderBy(a => a.Key)
+                .Select(a => new
+                {
+                    Age = a.Key,
+                    Genders = a.GroupBy(g => g.Gender)
+                        .Select(genderGroup => new Tuple<Enums.Gender, int>
+                        (
+                            genderGroup.Key,
+                            genderGroup.Count()
+                        ))
+                }).ToDictionary(g => g.Age, g => g.Genders.AsEnumerable());
+
+            if (gendersPerAgeSorted.Any())
+            {
+                Print.DisplayGenderCountByAge(gendersPerAgeSorted);
+            }
+            else
+            {
+                Print.DisplayNotFound();
+            }
         }
     }
 }
