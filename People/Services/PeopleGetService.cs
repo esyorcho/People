@@ -13,7 +13,7 @@ namespace People.Client.Services
     public class PeopleGetService : IPeopleGetService
     {
         private static HttpClient _httpClient = new HttpClient();
-        private const string baseAddress = "https://f43qgubfhf.execute-api.ap-southeast-2.amazonaws.com/sampletest/";
+        private const string baseAddress = "https://[sampleTestUrl]";
         private IPrinter _printer;
 
         public PeopleGetService(IPrinter printer)
